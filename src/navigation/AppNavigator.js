@@ -1,6 +1,6 @@
 /**
  * PocketStylist — Bottom Tab Navigation
- * Sets up the two-tab navigation: My Closet and Style Me.
+ * Sets up the three-tab navigation: My Closet, Style Me, and Profile.
  */
 
 import React from 'react';
@@ -9,13 +9,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '../constants/theme';
 import ClosetScreen from '../screens/ClosetScreen';
 import StyleMeScreen from '../screens/StyleMeScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
 /**
  * Custom tab bar icon component.
  */
-function TabIcon({ emoji, focused, color }) {
+function TabIcon({ emoji, focused }) {
   return (
     <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
       <Text style={styles.iconEmoji}>{emoji}</Text>
@@ -39,8 +40,8 @@ export default function AppNavigator() {
         component={ClosetScreen}
         options={{
           tabBarLabel: 'My Closet',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon emoji="👗" focused={focused} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="👗" focused={focused} />
           ),
         }}
       />
@@ -49,8 +50,18 @@ export default function AppNavigator() {
         component={StyleMeScreen}
         options={{
           tabBarLabel: 'Style Me',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon emoji="✨" focused={focused} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="✨" focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="👤" focused={focused} />
           ),
         }}
       />
