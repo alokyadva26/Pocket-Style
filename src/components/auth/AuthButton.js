@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   View,
 } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '../../constants/theme';
 
 export default function AuthButton({
   label,

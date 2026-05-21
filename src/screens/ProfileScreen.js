@@ -14,6 +14,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -87,7 +88,7 @@ export default function ProfileScreen() {
           <InfoRow label="Email" value={email} />
           <InfoRow label="Sign-in method" value={provider === 'google' ? 'Google' : 'Email & Password'} />
           <InfoRow label="Member since" value={createdAt} />
-          <InfoRow label="User ID" value={user?.id?.slice(0, 16) + '…'} mono />
+          <InfoRow label="User ID" value={user?.id ? user.id.slice(0, 16) + '…' : '—'} mono />
         </View>
 
         {/* App info */}
