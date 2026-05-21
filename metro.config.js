@@ -3,25 +3,29 @@
 // PocketStylist — Metro Bundler Configuration
 // =============================================================================
 //
-// Fix: @supabase/supabase-js pulls in optional @opentelemetry/* packages
-// that contain dynamic import() syntax Hermes cannot compile.
+// Two classes of modules need to be stubbed for React Native / Hermes builds:
 //
-// Solution: Map all @opentelemetry/* to an empty stub module via
-// extraNodeModules — this is the universally supported Metro approach
-// and works reliably across all Expo SDK 54 builds.
+// 1. @opentelemetry/* — Optional tracing peer deps of @supabase/supabase-js.
+//    They contain dynamic import() syntax that Hermes cannot compile.
+//
+// 2. Node built-ins required by @supabase/realtime-js's bundled `ws` package
+//    (`stream`, `ws`). React Native ships its own WebSocket implementation,
+//    so we stub the Node.js ws library to prevent Metro from trying to resolve
+//    Node core modules that don't exist in the RN environment.
 
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Path to our empty stub — resolves all OTel imports to a no-op module
+// Path to our empty no-op module
 const EMPTY_MODULE = path.resolve(__dirname, 'empty-module.js');
 
-// Map every @opentelemetry/* package to the empty stub.
-// This prevents Metro from ever bundling the dynamic import() calls
-// that Supabase uses for optional OTel tracing — Hermes can't compile those.
+// Stub modules that either:
+//  a) contain Hermes-incompatible dynamic import(), or
+//  b) are Node.js built-ins / server-only libs not available in React Native
 config.resolver.extraNodeModules = {
+  // ── OpenTelemetry (optional Supabase tracing deps) ──────────────────────
   '@opentelemetry/api': EMPTY_MODULE,
   '@opentelemetry/core': EMPTY_MODULE,
   '@opentelemetry/semantic-conventions': EMPTY_MODULE,
@@ -30,6 +34,12 @@ config.resolver.extraNodeModules = {
   '@opentelemetry/sdk-trace-web': EMPTY_MODULE,
   '@opentelemetry/sdk-node': EMPTY_MODULE,
   '@opentelemetry/resources': EMPTY_MODULE,
+
+  // ── Node.js built-ins used by realtime-js → ws ───────────────────────────
+  // React Native has a native WebSocket; ws is not needed.
+  'ws': EMPTY_MODULE,
+  'stream': require.resolve('stream-browserify'),
+  'events': require.resolve('events'),
 };
 
 module.exports = config;
