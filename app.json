@@ -41,7 +41,8 @@
           "cameraPermission": "PocketStylist needs access to your camera to photograph your clothes."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

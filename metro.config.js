@@ -3,48 +3,33 @@
 // PocketStylist — Metro Bundler Configuration
 // =============================================================================
 //
-// Key fix: @supabase/supabase-js (v2.47+) and some transitive dependencies
-// optionally import @opentelemetry/* packages using dynamic import() syntax
-// that Hermes cannot compile in production builds.
+// Fix: @supabase/supabase-js pulls in optional @opentelemetry/* packages
+// that contain dynamic import() syntax Hermes cannot compile.
 //
-// We stub those packages to an empty module so Metro never bundles
-// the dynamic import() expression into the output bundle.
+// Solution: Map all @opentelemetry/* to an empty stub module via
+// extraNodeModules — this is the universally supported Metro approach
+// and works reliably across all Expo SDK 54 builds.
 
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Path to our empty stub module
+// Path to our empty stub — resolves all OTel imports to a no-op module
 const EMPTY_MODULE = path.resolve(__dirname, 'empty-module.js');
 
-// Packages to stub out — all optional OTel peer deps from supabase
-const OTEL_PACKAGES = [
-  '@opentelemetry/api',
-  '@opentelemetry/core',
-  '@opentelemetry/semantic-conventions',
-  '@opentelemetry/instrumentation',
-  '@opentelemetry/sdk-trace-base',
-  '@opentelemetry/sdk-trace-web',
-  '@opentelemetry/sdk-node',
-  '@opentelemetry/resources',
-];
-
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  const isOtel = OTEL_PACKAGES.some(
-    (pkg) => moduleName === pkg || moduleName.startsWith(pkg + '/')
-  );
-
-  if (isOtel) {
-    // Resolve to the empty stub — no dynamic import(), no Hermes crash
-    return {
-      filePath: EMPTY_MODULE,
-      type: 'sourceFile',
-    };
-  }
-
-  // Default resolution for all other modules
-  return context.resolveRequest(context, moduleName, platform);
+// Map every @opentelemetry/* package to the empty stub.
+// This prevents Metro from ever bundling the dynamic import() calls
+// that Supabase uses for optional OTel tracing — Hermes can't compile those.
+config.resolver.extraNodeModules = {
+  '@opentelemetry/api': EMPTY_MODULE,
+  '@opentelemetry/core': EMPTY_MODULE,
+  '@opentelemetry/semantic-conventions': EMPTY_MODULE,
+  '@opentelemetry/instrumentation': EMPTY_MODULE,
+  '@opentelemetry/sdk-trace-base': EMPTY_MODULE,
+  '@opentelemetry/sdk-trace-web': EMPTY_MODULE,
+  '@opentelemetry/sdk-node': EMPTY_MODULE,
+  '@opentelemetry/resources': EMPTY_MODULE,
 };
 
 module.exports = config;
