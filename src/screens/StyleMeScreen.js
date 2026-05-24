@@ -15,7 +15,7 @@ import useWardrobeStore from '../store/wardrobeStore';
 import OutfitCard from '../components/OutfitCard';
 import EmptyState from '../components/EmptyState';
 
-export default function StyleMeScreen() {
+export default function StyleMeScreen({ navigation }) {
   // State
   const [selectedOccasion, setSelectedOccasion] = useState('casual');
   const [outfit, setOutfit] = useState(null);
@@ -208,6 +208,16 @@ export default function StyleMeScreen() {
                   slotLabel="Accessory"
                   slotIcon="⌚"
                 />
+
+                {/* Virtual Try-On Button */}
+                <TouchableOpacity
+                  style={styles.tryOnButton}
+                  onPress={() => navigation.navigate('TryOn', { outfit })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.tryOnButtonIcon}>👗</Text>
+                  <Text style={styles.tryOnButtonText}>Virtual Try-On</Text>
+                </TouchableOpacity>
               </Animated.View>
             )}
 
@@ -323,5 +333,24 @@ const styles = StyleSheet.create({
   promptText: {
     color: COLORS.textMuted, fontSize: TYPOGRAPHY.base,
     textAlign: 'center', lineHeight: 22,
+  },
+
+  // Try-On Button
+  tryOnButton: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.xl,
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    ...SHADOWS.md,
+  },
+  tryOnButtonIcon: { fontSize: 20 },
+  tryOnButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: TYPOGRAPHY.lg,
+    fontWeight: TYPOGRAPHY.bold,
   },
 });

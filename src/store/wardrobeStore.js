@@ -1,31 +1,8 @@
-/**
- * =============================================================================
- * PocketStylist — Zustand State Store
- * =============================================================================
- * 
- * Global state management using Zustand.
- * Manages clothing items, loading states, and provides actions
- * for CRUD operations that sync with the SQLite database.
- * 
- * This is the single source of truth for wardrobe data in the app.
- */
-
 import { create } from 'zustand';
-import {
-  getAllClothingItems,
-  insertClothingItem,
-  deleteClothingItem as dbDeleteItem,
-  getCategoryCounts,
-} from '../database/database';
+import { supabase } from '../../lib/supabase';
 
 /**
- * Main wardrobe store.
- * 
- * State shape:
- *   items: ClothingItem[]  — All clothing items in the wardrobe
- *   isLoading: boolean     — Whether a DB operation is in progress
- *   categoryCounts: Object — Item count per category
- *   selectedCategory: string | null — Active filter in closet view
+ * Main wardrobe store connected to Supabase.
  */
 const useWardrobeStore = create((set, get) => ({
   // ─── State ──────────────────────────────────────────────────
@@ -36,15 +13,29 @@ const useWardrobeStore = create((set, get) => ({
 
   // ─── Actions ────────────────────────────────────────────────
 
-  /**
-   * Loads all items from the database into state.
-   * Called on app initialization and after mutations.
-   */
   loadItems: async () => {
     set({ isLoading: true });
     try {
-      const items = await getAllClothingItems();
-      const counts = await getCategoryCounts();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: items, error } = await supabase
+        .from('wardrobe_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Calculate category counts dynamically
+      const counts = { tops: 0, bottoms: 0, footwear: 0, accessories: 0 };
+      items.forEach(item => {
+        if (item.category === 'topwear') counts.tops++;
+        else if (item.category === 'bottomwear') counts.bottoms++;
+        else if (item.category === 'footwear') counts.footwear++;
+        else if (item.category === 'accessory') counts.accessories++;
+      });
+
       set({ items, categoryCounts: counts, isLoading: false });
     } catch (error) {
       console.error('[WardrobeStore] Failed to load items:', error);
@@ -52,28 +43,14 @@ const useWardrobeStore = create((set, get) => ({
     }
   },
 
-  /**
-   * Adds a new clothing item to the database and state.
-   * @param {Object} item — The item to add (must include all required fields).
-   */
-  addItem: async (item) => {
-    try {
-      await insertClothingItem(item);
-      // Refresh the full list to stay in sync
-      await get().loadItems();
-    } catch (error) {
-      console.error('[WardrobeStore] Failed to add item:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Deletes a clothing item by ID from the database and state.
-   * @param {string} id — The UUID of the item to delete.
-   */
   deleteItem: async (id) => {
     try {
-      await dbDeleteItem(id);
+      const { error } = await supabase
+        .from('wardrobe_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       await get().loadItems();
     } catch (error) {
       console.error('[WardrobeStore] Failed to delete item:', error);
@@ -81,22 +58,20 @@ const useWardrobeStore = create((set, get) => ({
     }
   },
 
-  /**
-   * Sets the active category filter for the closet view.
-   * @param {string|null} category — Category ID or null for all.
-   */
   setSelectedCategory: (category) => {
     set({ selectedCategory: category });
   },
 
-  /**
-   * Returns items filtered by the currently selected category.
-   * If no category is selected, returns all items.
-   */
   getFilteredItems: () => {
     const { items, selectedCategory } = get();
     if (!selectedCategory) return items;
-    return items.filter((item) => item.category === selectedCategory);
+    // Map internal categories to Supabase schema categories if needed
+    let filterCategory = selectedCategory;
+    if (selectedCategory === 'tops') filterCategory = 'topwear';
+    if (selectedCategory === 'bottoms') filterCategory = 'bottomwear';
+    if (selectedCategory === 'accessories') filterCategory = 'accessory';
+    
+    return items.filter((item) => item.category === filterCategory);
   },
 }));
 

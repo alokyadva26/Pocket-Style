@@ -20,9 +20,15 @@ import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS, CATEGORIES } from '../con
  * @param {string} props.slotIcon — Emoji icon for the slot.
  */
 export default function OutfitCard({ item, slotLabel, slotIcon }) {
-  const categoryConfig = item
-    ? CATEGORIES.find((c) => c.id === item.category)
-    : null;
+  // Fallbacks to support both local mock data schema and new Supabase schema
+  const imageUri = item?.imagePath || item?.image_url;
+  const itemName = item?.name || item?.clothing_type || 'Item';
+  
+  let catId = item?.category;
+  if (catId === 'topwear') catId = 'tops';
+  if (catId === 'bottomwear') catId = 'bottoms';
+  if (catId === 'accessory') catId = 'accessories';
+  const categoryConfig = CATEGORIES.find((c) => c.id === catId);
 
   if (!item) {
     // Empty slot placeholder
@@ -47,7 +53,7 @@ export default function OutfitCard({ item, slotLabel, slotIcon }) {
       <View style={styles.cardContent}>
         {/* Item thumbnail */}
         <Image
-          source={{ uri: item.imagePath }}
+          source={{ uri: imageUri }}
           style={styles.thumbnail}
           contentFit="cover"
           transition={300}
@@ -60,7 +66,7 @@ export default function OutfitCard({ item, slotLabel, slotIcon }) {
             {slotIcon} {slotLabel}
           </Text>
           <Text style={styles.itemName} numberOfLines={2}>
-            {item.name}
+            {itemName.charAt(0).toUpperCase() + itemName.slice(1)}
           </Text>
         </View>
       </View>

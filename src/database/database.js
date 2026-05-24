@@ -37,7 +37,7 @@ export async function getDatabase() {
     CREATE TABLE IF NOT EXISTS clothing_items (
       id TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL,
-      category TEXT NOT NULL CHECK(category IN ('tops', 'bottoms', 'footwear', 'accessories')),
+      category TEXT NOT NULL CHECK(category IN ('topwear', 'bottomwear', 'footwear', 'accessory')),
       occasions TEXT NOT NULL DEFAULT '[]',
       imagePath TEXT NOT NULL,
       color TEXT DEFAULT '',
@@ -152,7 +152,11 @@ export async function getCategoryCounts() {
 
   const counts = { tops: 0, bottoms: 0, footwear: 0, accessories: 0 };
   results.forEach((row) => {
-    counts[row.category] = row.count;
+    let cat = row.category;
+    if (cat === 'topwear') cat = 'tops';
+    if (cat === 'bottomwear') cat = 'bottoms';
+    if (cat === 'accessory') cat = 'accessories';
+    counts[cat] = row.count;
   });
 
   return counts;

@@ -40,8 +40,18 @@ const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 export default function ClothingCard({ item }) {
   const deleteItem = useWardrobeStore((state) => state.deleteItem);
 
+  // Fallbacks to support both local mock data schema and new Supabase schema
+  const imageUri = item.imagePath || item.image_url;
+  const itemName = item.name || item.clothing_type || 'Item';
+  const itemBadges = item.occasions || item.style_categories || [];
+
   // Find the category config for color coding
-  const categoryConfig = CATEGORIES.find((c) => c.id === item.category) || CATEGORIES[0];
+  // Map Supabase 'topwear' to internal 'tops' if needed, or rely on exact match
+  let catId = item.category;
+  if (catId === 'topwear') catId = 'tops';
+  if (catId === 'bottomwear') catId = 'bottoms';
+  if (catId === 'accessory') catId = 'accessories';
+  const categoryConfig = CATEGORIES.find((c) => c.id === catId) || CATEGORIES[0];
 
   /**
    * Shows a confirmation dialog before deleting the item.
@@ -49,7 +59,7 @@ export default function ClothingCard({ item }) {
   const handleLongPress = useCallback(() => {
     Alert.alert(
       'Remove Item',
-      `Are you sure you want to remove "${item.name}" from your wardrobe?`,
+      `Are you sure you want to remove this from your wardrobe?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -79,7 +89,7 @@ export default function ClothingCard({ item }) {
 
       {/* Clothing image — using expo-image for performance */}
       <Image
-        source={{ uri: item.imagePath }}
+        source={{ uri: imageUri }}
         style={styles.image}
         contentFit="cover"
         transition={200}
@@ -90,27 +100,29 @@ export default function ClothingCard({ item }) {
       {/* Item info overlay */}
       <View style={styles.infoContainer}>
         <Text style={styles.itemName} numberOfLines={1}>
-          {item.name}
+          {itemName.charAt(0).toUpperCase() + itemName.slice(1)}
         </Text>
 
-        {/* Occasion badges */}
+        {/* Occasion/Style badges */}
         <View style={styles.badgeRow}>
-          {item.occasions.slice(0, 2).map((occ) => {
-            const occConfig = OCCASIONS.find((o) => o.id === occ);
+          {itemBadges.slice(0, 2).map((badgeStr) => {
+            const occConfig = OCCASIONS.find((o) => o.id === badgeStr);
+            const badgeLabel = occConfig?.label || badgeStr;
+            const badgeColor = occConfig?.color || COLORS.primary;
             return (
               <View
-                key={occ}
-                style={[styles.badge, { backgroundColor: occConfig?.color + '30' }]}
+                key={badgeStr}
+                style={[styles.badge, { backgroundColor: badgeColor + '30' }]}
               >
-                <Text style={[styles.badgeText, { color: occConfig?.color }]}>
-                  {occConfig?.label || occ}
+                <Text style={[styles.badgeText, { color: badgeColor }]}>
+                  {badgeLabel}
                 </Text>
               </View>
             );
           })}
-          {item.occasions.length > 2 && (
+          {itemBadges.length > 2 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>+{item.occasions.length - 2}</Text>
+              <Text style={styles.badgeText}>+{itemBadges.length - 2}</Text>
             </View>
           )}
         </View>

@@ -29,6 +29,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
 
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../../lib/supabase';
 import AuthInput from '../../components/auth/AuthInput';
 import AuthButton from '../../components/auth/AuthButton';
 import AuthDivider from '../../components/auth/AuthDivider';
@@ -197,7 +198,6 @@ export default function LoginScreen({ navigation }) {
                       Alert.alert('Enter your email first');
                       return;
                     }
-                    const { supabase } = require('../../../lib/supabase');
                     await supabase.auth.resetPasswordForEmail(email.trim());
                     Alert.alert('Sent!', 'Check your email for the reset link.');
                   },
